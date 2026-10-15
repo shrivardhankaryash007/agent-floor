@@ -8,8 +8,8 @@ updated: 2026-10-15
 
 ## Current Slice
 
-- req: slice 1 (week 1): P0 done; P1–P4 ready for the coding executor
-- state: scaffold plus locked red tests committed; spikes S1–S3 recorded
+- req: slice 1 (week 1): P0–P4 done and merged on main; next is the M1 exit gate
+- state: P0–P4 merged; full gate green (89 passed, 96% cov, ruff, mypy --strict, LOCKED ok); real-floor probe table in docs/RESULTS.md
 - owner: owner
 - plan: `~/dev/plans/agent-safety-layer/plan.mdx` (packets in `packets/`)
 - goal: a fail-closed launcher that runs claude, codex and agy inside a pinned srt floor, with
@@ -19,7 +19,8 @@ updated: 2026-10-15
 
 - `tools/node_modules/.bin/srt --version` → 0.0.79. Path:
   `tools/node_modules/.bin/srt` (relative to the repo root) (2026-10-15)
-- `uv run pytest -q` → 78 failed (73 NotImplementedError, 5 FileNotFoundError in test_docs), 11 passed (constants); 89 total, locked red, 2026-10-15
+- `uv run pytest -q --cov=agent_floor --cov-fail-under=80` → 89 passed, 95.7% coverage (2026-10-15)
+- `agent-floor probe` on real srt 0.0.79: 14/14 rows match expectation (docs/RESULTS.md); pbcopy row uses an in-project shim, not the real pasteboard (needs T1)
 - `shasum -a 256 -c tests/LOCKED.sha256` → OK
 
 ## Decisions
@@ -27,7 +28,15 @@ updated: 2026-10-15
 - ADR 0001: srt 0.0.79 is the floor, called through its CLI; Fence 0.1.67 is the comparator
   (S3 found no taint gating in Fence).
 
+## Next
+
+- **M1 exit gate:** one real working day under `agent-floor run -- claude` (owner), then review prompts/hour and false positives.
+- Load the weekly probe job yourself: `launchctl load ops/com.agent-floor.weekly-probe.plist` (template only; not loaded).
+
 ## Known residuals
+
+- P3 review found: srt deny paths do not match through the `/var` -> `/private/var` symlink; probe fake HOME is resolved. Real HOME is under `/Users`, unaffected, but any symlinked HOME is a risk to check in `doctor`.
+- Packet P3 omitted `cli.py` from writable files; the reviewer wired `probe`.
 
 - Allowed-host exfiltration leaks on both floors. This is the M2 target.
 - Claude OAuth token refresh fails inside the floor; refresh outside it once.
