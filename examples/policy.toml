@@ -1,0 +1,54 @@
+# Starter agent-floor policy. Copy it to ~/.config/agent-floor/policy.toml (or to
+# $AGENT_FLOOR_CONFIG/policy.toml) and edit project_dirs.
+# Built-in protections (secret reads, agent config writes, sync folders) apply on
+# top of this file and cannot be loosened here.
+version = 1
+
+# The only places the agent may write, besides /tmp and the vendor CLIs' own state.
+project_dirs = ["~/dev"]
+
+# Every other env var is dropped. Names matching TOKEN/SECRET/KEY/... are dropped
+# even if listed, because a leaked env var is the cheapest exfil target.
+env_allow = ["EDITOR", "COLORTERM", "NO_COLOR"]
+
+# Network is deny-all; each allowed host needs a rule.
+# green = silent, amber = allowed and logged, red/black = denied with the reason.
+[[rules]]
+id = "anthropic-api"
+tier = "green"
+kind = "net"
+pattern = "api.anthropic.com"
+added = 2026-10-15
+reason = "Claude Code model API"
+
+[[rules]]
+id = "claude-ai"
+tier = "green"
+kind = "net"
+pattern = "claude.ai"
+added = 2026-10-15
+reason = "Claude Code account and OAuth"
+
+[[rules]]
+id = "github"
+tier = "amber"
+kind = "net"
+pattern = "github.com"
+added = 2026-10-15
+reason = "git fetch and push; logged because push is an exfil path"
+
+[[rules]]
+id = "pypi"
+tier = "amber"
+kind = "net"
+pattern = "pypi.org"
+added = 2026-10-15
+reason = "package index; logged for typosquat review"
+
+[[rules]]
+id = "pypi-files"
+tier = "amber"
+kind = "net"
+pattern = "files.pythonhosted.org"
+added = 2026-10-15
+reason = "package downloads; logged for typosquat review"
