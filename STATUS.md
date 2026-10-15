@@ -36,7 +36,7 @@ updated: 2026-10-15
 
 ## Dirty / In-Flight
 
-- The GitHub remote is not created yet; it waits on the owner (private until gates g2–g7 pass).
+- Remote: github.com/shrivardhankaryash007/agent-floor, PRIVATE (owner-approved 2026-10-15). It goes public only after slice 1 passes gates g2–g7.
 
 ## Next Action
 
