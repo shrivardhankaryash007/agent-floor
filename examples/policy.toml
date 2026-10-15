@@ -11,6 +11,10 @@ project_dirs = ["~/dev"]
 # even if listed, because a leaked env var is the cheapest exfil target.
 env_allow = ["EDITOR", "COLORTERM", "NO_COLOR"]
 
+# Needed for interactive `claude`/`codex` (else: setRawMode EPERM). Residual: the
+# agent can also reach your other terminal devices. Set false for headless runs.
+allow_pty = true
+
 # Network is deny-all; each allowed host needs a rule.
 # green = silent, amber = allowed and logged, red/black = denied with the reason.
 [[rules]]

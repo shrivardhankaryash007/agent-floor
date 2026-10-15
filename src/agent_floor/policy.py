@@ -104,6 +104,8 @@ class Policy(BaseModel):
     # S1: codex needs the first, agy the second; both are residual holes, so opt-in only.
     weaker_network_isolation: bool = False
     allow_local_binding: bool = False
+    # Interactive TUIs (claude, codex) need tty ioctls; it also opens every /dev/ttys*, so opt-in.
+    allow_pty: bool = False
 
 
 def default_policy_path() -> Path:
@@ -199,7 +201,7 @@ def compile_srt(policy: Policy, *, home: Path) -> dict[str, object]:
         rule.pattern: f"agent-floor red: {rule.reason} (rule {rule.id}); ask the owner"
         for rule in denied_rules
     }
-    return {
+    settings: dict[str, object] = {
         "filesystem": {
             "denyRead": deny_read,
             "allowRead": [],
@@ -214,6 +216,10 @@ def compile_srt(policy: Policy, *, home: Path) -> dict[str, object]:
         },
         "enableWeakerNetworkIsolation": policy.weaker_network_isolation,
     }
+    # Emitted only when on, so policies without the flag compile byte-identically to before.
+    if policy.allow_pty:
+        settings["allowPty"] = True
+    return settings
 
 
 def classify_write(path: Path) -> WriteClass:

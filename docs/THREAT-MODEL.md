@@ -53,6 +53,7 @@ Statuses below reflect the plan's disposition, not proof that every planned miti
 | S5 | About one hour/day steering | Addressed with a weekly unattended launchd probe schedule; failures surface for owner review. |
 | M1 | Inter-agent envelope | Deferred to M3. |
 | N1 | Nested Seatbelt fails | Resolved operationally per invocation: disable the inner sandbox where required; codex uses `-s danger-full-access` inside the floor. |
+| N6 | Interactive TUIs need tty ioctls (`setRawMode EPERM` without them) | Opt-in `allow_pty`. Residual: srt then allows ioctl/read/write on `/dev/ptmx` and every `/dev/ttys*`, so a tool inside could write to your other terminals; keystroke injection (TIOCSTI) on macOS is unverified. Off for headless `-p` runs. |
 | N2 | Agent CLI model API host must be allowed | Accepted and documented residual risk; model API traffic is trusted by the plan. |
 | N3 | srt is beta and its API changes | Mitigated by exact version pinning and a probe run for version bumps. |
 | N4 | Cost of live-model testing | Managed by the zero-extra-spend rule; T1 is capped at 50 tasks. |
