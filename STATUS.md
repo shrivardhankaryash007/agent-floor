@@ -17,8 +17,8 @@ updated: 2026-10-15
 
 ## Verified Baseline
 
-- `tools/node_modules/.bin/srt --version` → 0.0.79. Absolute path:
-  `/Users/yashshrivardhankar/dev/agent-floor/tools/node_modules/.bin/srt` (2026-10-15)
+- `tools/node_modules/.bin/srt --version` → 0.0.79. Path:
+  `tools/node_modules/.bin/srt` (relative to the repo root) (2026-10-15)
 - `uv run pytest -q` → 78 failed (73 NotImplementedError, 5 FileNotFoundError in test_docs), 11 passed (constants); 89 total, locked red, 2026-10-15
 - `shasum -a 256 -c tests/LOCKED.sha256` → OK
 
