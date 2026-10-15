@@ -7,9 +7,11 @@ import subprocess
 import sys
 from collections.abc import Sequence
 from datetime import UTC, date, datetime
+from pathlib import Path
 
 from agent_floor.errors import FloorUnavailableError, PolicyError
 from agent_floor.policy import default_policy_path, load_policy, policy_hash
+from agent_floor.probes import run_probes
 from agent_floor.run import find_srt, run
 
 
@@ -55,6 +57,14 @@ def _doctor() -> int:
     return 0 if srt_version is not None and digest is not None else 3
 
 
+def _probe(out: Path) -> int:
+    """Run the T0 probe suite; 0 all match, 1 any mismatch, 2 inconclusive only."""
+    rows = run_probes(out, srt=find_srt(), now=lambda: datetime.now(UTC))
+    if any(not r["match"] and r["outcome"] != "inconclusive" for r in rows):
+        return 1
+    return 2 if any(r["outcome"] == "inconclusive" for r in rows) else 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Parse `argv` and dispatch to run, doctor or probe; return the exit code."""
     parser = argparse.ArgumentParser(prog="agent-floor")
@@ -62,7 +72,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     run_parser = commands.add_parser("run")
     run_parser.add_argument("cmd", nargs=argparse.REMAINDER)
     commands.add_parser("doctor")
-    commands.add_parser("probe")
+    probe_parser = commands.add_parser("probe")
+    probe_parser.add_argument("--out", type=Path, default=Path("probe-out"))
     args = parser.parse_args(argv)
     if args.command == "run":
         command = list(args.cmd)
@@ -73,7 +84,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run(command, policy_path=default_policy_path(), now=lambda: datetime.now(UTC))
     if args.command == "doctor":
         return _doctor()
-    return 0
+    return _probe(args.out)
 
 
 if __name__ == "__main__":
