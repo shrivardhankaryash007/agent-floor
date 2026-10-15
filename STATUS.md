@@ -51,3 +51,7 @@ updated: 2026-10-15
 
 - Dispatch P1, then P2, P3 and P4, to the coding executor (registry coding default) with the
   packets as briefs.
+
+## 2026-10-15 P5 init + install guide
+
+`agent-floor init`, one-step srt install (`npm ci --ignore-scripts` from init) and `docs/INSTALL-FOR-AGENTS.md` merged. Gate green: 109 passed, 95% coverage, ruff, mypy --strict, LOCKED. Clean-HOME dry run: `docs/DRY-RUN-2026-10-15.md` (also lists Linux gaps). Open: vendor login hosts unverified without an account; WebFetch untested. Repo is still private.
