@@ -40,4 +40,4 @@ uv run ruff check && uv run ruff format --check && uv run mypy --strict src && u
 shasum -a 256 -c tests/LOCKED.sha256
 ```
 
-Install the floor with `cd tools && npm ci --ignore-scripts`.
+Install the floor with `cd tools && npm ci --ignore-scripts`. Agent setup guide: [docs/INSTALL-FOR-AGENTS.md](docs/INSTALL-FOR-AGENTS.md).

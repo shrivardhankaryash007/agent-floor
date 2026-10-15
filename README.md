@@ -4,15 +4,7 @@
 
 ## Quick start
 
-Install the pinned floor dependencies with `cd tools && npm ci --ignore-scripts` and install this Python project in its virtual environment. Then create your policy from the starter (it is never created for you, because the floor will not guess what you allow), and edit `project_dirs` and the network rules:
-
-```sh
-mkdir -p ~/.config/agent-floor
-cp examples/policy.toml ~/.config/agent-floor/policy.toml
-chmod 600 ~/.config/agent-floor/policy.toml
-agent-floor doctor            # exit 0 = srt found and the policy is valid
-agent-floor run -- claude
-```
+Run `uv sync`, then `uv run agent-floor init --project-dir <directory>` to install the pinned floor dependencies and create a policy without overwriting an existing one. Ask the owner which directory agents may write to. See the [agent installation guide](docs/INSTALL-FOR-AGENTS.md) for prerequisites and verification.
 
 The floor fails closed if srt is missing or the policy is invalid. Vendor inner sandboxes may need to be relaxed per invocation inside the floor because macOS Seatbelt cannot nest.
 

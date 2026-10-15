@@ -8,6 +8,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+
+from agent_floor import cli
+from agent_floor.errors import FloorUnavailableError
 from agent_floor.init import (
     SUPPORTED_CLIS,
     detect_clis,
@@ -15,9 +18,6 @@ from agent_floor.init import (
     render_policy,
     run_init,
 )
-
-from agent_floor import cli
-from agent_floor.errors import FloorUnavailableError
 from agent_floor.policy import compile_srt, load_policy
 
 TODAY = date(2026, 10, 15)
