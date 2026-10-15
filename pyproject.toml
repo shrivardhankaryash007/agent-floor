@@ -1,0 +1,57 @@
+[project]
+name = "agent-floor"
+version = "0.0.1"
+description = "A local, vendor-neutral layer that reduces the harm one prompt injection can do through your own AI coding agents."
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "structlog>=24.4",
+]
+
+[project.scripts]
+agent-floor = "agent_floor.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_floor"]
+
+[tool.ruff]
+# spike scripts are verbatim receipts of what ran, not library code
+extend-exclude = ["docs/spikes"]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "S", "SIM", "RUF", "ANN"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests assert, run subprocesses and use throwaway literals by design.
+"tests/**" = ["S101", "S603", "S607", "S108", "ANN401"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "floor: runs the real pinned srt on the host (T0); skipped when srt is absent",
+]
+
+[tool.coverage.run]
+source = ["agent_floor"]

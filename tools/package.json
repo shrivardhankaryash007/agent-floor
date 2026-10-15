@@ -1,0 +1,8 @@
+{
+  "name": "agent-floor-tools",
+  "private": true,
+  "description": "Pinned sandbox floor (srt) for agent-floor. Bump only through a probe run.",
+  "dependencies": {
+    "@anthropic-ai/sandbox-runtime": "0.0.79"
+  }
+}
