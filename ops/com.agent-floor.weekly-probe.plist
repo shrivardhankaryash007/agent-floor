@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.agent-floor.weekly-probe</string>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Weekday</key>
+		<integer>1</integer>
+		<key>Hour</key>
+		<integer>9</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/yashshrivardhankar/dev/agent-floor/.venv/bin/agent-floor</string>
+		<string>probe</string>
+		<string>--out</string>
+		<string>/Users/yashshrivardhankar/.local/state/agent-floor/probes/latest</string>
+	</array>
+	<key>StandardOutPath</key>
+	<string>/Users/yashshrivardhankar/.local/state/agent-floor/weekly-probe.stdout.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/yashshrivardhankar/.local/state/agent-floor/weekly-probe.stderr.log</string>
+</dict>
+</plist>
