@@ -1,7 +1,7 @@
 ---
 status_version: 2
 project: agent-floor
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # agent-floor Status
@@ -34,6 +34,12 @@ updated: 2026-10-20
 - Weekly probe job is LIVE (2026-10-20) as workspace job `com.yashshrivardhankar.agent-floor-probe`
   (`~/dev/scripts/launchd/`, Mondays 09:00, dated runs under `~/.local/state/agent-floor/probes/`, `latest` symlink).
   First launchd run: exit 0, 14/14 rows match. `ops/` template fixed: it lacked node on PATH, so it would have exited 1 with no results.
+- **Workspace consumer (S2, 2026-10-21):** `~/dev` dispatchers run codex and agy executors under
+  `agent-floor run --` by default, with headless per-seat policies in `~/dev/scripts/floor-policies/`.
+  Claude is opt-in: headless `claude -p` reports "Not logged in" inside srt, which is a class-3
+  owner item on the Desk. The weekly job also runs `dispatch_floor_probe.py` (6/6 match). A live
+  floored codex dispatch ran its shell with `~/.ssh` blocked. ADR:
+  `~/dev/docs/decisions/2026-10-20-dispatch-floor-flag.md`. This repo is unchanged by S2.
 
 ## Known residuals
 
@@ -43,6 +49,7 @@ updated: 2026-10-20
 - Allowed-host exfiltration leaks on both floors. This is the M2 target.
 - Claude OAuth token refresh fails inside the floor; refresh outside it once.
 - `enableWeakerNetworkIsolation` (codex) and `allowLocalBinding` (agy) are opt-in holes.
+  On dispatch these holes are live by default: the agy floored dispatch probe row reaches a loopback sink (curl rc=0), and the secret read is still blocked.
 - `npm audit`: 2 high findings in `node-forge` (srt dependency), tracked as N5.
 
 ## Dirty / In-Flight
