@@ -1,7 +1,7 @@
 ---
 status_version: 2
 project: agent-floor
-updated: 2026-10-15
+updated: 2026-10-20
 ---
 
 # agent-floor Status
@@ -31,7 +31,9 @@ updated: 2026-10-15
 ## Next
 
 - **M1 exit gate:** one real working day under `agent-floor run -- claude` (owner), then review prompts/hour and false positives.
-- Load the weekly probe job yourself: `launchctl load ops/com.agent-floor.weekly-probe.plist` (template only; not loaded).
+- Weekly probe job is LIVE (2026-10-20) as workspace job `com.yashshrivardhankar.agent-floor-probe`
+  (`~/dev/scripts/launchd/`, Mondays 09:00, dated runs under `~/.local/state/agent-floor/probes/`, `latest` symlink).
+  First launchd run: exit 0, 14/14 rows match. `ops/` template fixed: it lacked node on PATH, so it would have exited 1 with no results.
 
 ## Known residuals
 
