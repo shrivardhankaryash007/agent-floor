@@ -58,8 +58,7 @@ updated: 2026-10-21
 
 ## Next Action
 
-- Dispatch P1, then P2, P3 and P4, to the coding executor (registry coding default) with the
-  packets as briefs.
+- M1 exit gate: one real working day under `agent-floor run -- claude` (owner), then review prompts/hour and false positives (P0–P5 already merged on main).
 
 ## 2026-10-15 P5 init + install guide
 
