@@ -36,8 +36,8 @@ ENV_NEVER: re.Pattern[str] = re.compile(
 )
 ENV_NEVER_PREFIXES: tuple[str, ...] = ("AWS_",)
 
-# S1: all three vendor CLIs start with only ENV_ALWAYS, so no exception is needed.
-VENDOR_ENV_EXCEPTIONS: tuple[str, ...] = ()
+# Only the Claude seat policy may allow this credential through the env scrub.
+VENDOR_ENV_EXCEPTIONS: tuple[str, ...] = ("CLAUDE_CODE_OAUTH_TOKEN",)
 
 
 def _timestamp(now: datetime) -> str:

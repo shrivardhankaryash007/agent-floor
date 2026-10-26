@@ -48,11 +48,65 @@ def test_env_constants() -> None:
         "TMPDIR",
         "COLORTERM",
     )
-    assert VENDOR_ENV_EXCEPTIONS == ()
     assert ENV_NEVER_PREFIXES == ("AWS_",)
     for name in ("GITHUB_TOKEN", "my_secret", "OPENAI_API_KEY", "PGPASSWORD", "AUTH_HEADER"):
         assert ENV_NEVER.search(name)
     assert not ENV_NEVER.search("EDITOR")
+
+
+def test_vendor_exception_pins_exactly_one_name() -> None:
+    assert VENDOR_ENV_EXCEPTIONS == ("CLAUDE_CODE_OAUTH_TOKEN",)
+
+
+def test_token_passes_only_when_allowed_and_excepted() -> None:
+    name = "CLAUDE_CODE_OAUTH_TOKEN"
+    assert scrub_env({name: "FAKE-x"}, allow=[name]) == {name: "FAKE-x"}
+
+
+def test_token_dropped_when_not_in_allow() -> None:
+    name = "CLAUDE_CODE_OAUTH_TOKEN"
+    assert scrub_env({name: "FAKE-x"}, allow=[]) == {}
+
+
+def test_other_token_like_names_still_dropped_even_if_allowed() -> None:
+    names = (
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_AUTH_TOKEN",
+        "GITHUB_TOKEN",
+        "OPENAI_API_KEY",
+        "CLAUDE_CODE_OAUTH_TOKEN_2",
+        "claude_code_oauth_token",
+        "AWS_SECRET_ACCESS_KEY",
+        "MY_SESSION_COOKIE",
+    )
+    env = {name: "FAKE-x" for name in names}
+    assert scrub_env(env, allow=names) == {}
+
+
+def test_env_never_regex_and_prefixes_unchanged() -> None:
+    assert (
+        ENV_NEVER.pattern
+        == r"(?i)(TOKEN|SECRET|KEY|PASSWORD|PASSWD|CREDENTIAL|AUTH|COOKIE|SESSION)"
+    )
+    assert ENV_NEVER_PREFIXES == ("AWS_",)
+
+
+def test_secret_read_set_unchanged() -> None:
+    from agent_floor.policy import SECRET_READ
+
+    assert SECRET_READ == (
+        "~/.ssh",
+        "~/.aws",
+        "~/.config/gh",
+        "~/.netrc",
+        "~/.zsh_history",
+        "~/.bash_history",
+        "~/.docker/config.json",
+        "~/.npmrc",
+        "~/.pypirc",
+        "**/.env",
+        "**/.env.*",
+    )
 
 
 # --- scrub_env -----------------------------------------------------------------------------
