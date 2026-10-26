@@ -34,7 +34,7 @@ Statuses below reflect the plan's disposition, not proof that every planned miti
 | A5 | Worker-to-researcher query leaks secrets | Deferred to M3; typed query design is planned. |
 | A6 | Backdoors, typosquats, destructive commands | Destructive writes are scope-limited; typosquat checks deferred to M4; runtime backdoor detection dropped. |
 | A7 | Path tricks (symlink, `..`, TOCTOU) | Resolved by OS path enforcement; symlink-escape and dotdot-escape probes. |
-| A8 | Secrets already exposed | Partly resolved: environment scrub and read-deny paths; CLI credentials remain accessible; broker-held tokens deferred to M4. The Claude seat policy allows only `CLAUDE_CODE_OAUTH_TOKEN` through a double-gated exception requiring both the exception and caller `allow`. |
+| A8 | Secrets already exposed | Partly resolved: environment scrub and read-deny paths; CLI credentials remain accessible; broker-held tokens deferred to M4. The Claude seat policy allows only `CLAUDE_CODE_OAUTH_TOKEN` through a double-gated exception requiring both the exception and caller `allow`. Cross-seat vendor state: the claude and antigravity seat policies deny read and write of `~/.codex` (black rules, enforced by `denyRead`/`denyWrite`, which beats `allowWrite`); only the codex seat policy reaches it, and its own read set is not yet narrowed (packet S4b). |
 | A9 | Local models are injectable | Resolved as a design principle: local-model output is treated as untrusted; implementation is planned for M3/M4. |
 | H1 | Approval fatigue | Measured through owner-prompt events; target is at most two prompts/hour on a normal day. |
 | H2 | Stale or contradictory rules | Resolved in P1 with dated rules, supersession, expiry, and conflict rejection. |
