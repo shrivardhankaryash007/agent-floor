@@ -15,21 +15,22 @@
 	</dict>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/Users/yashshrivardhankar/dev/agent-floor/.venv/bin/agent-floor</string>
+		<string>__REPO_DIR__/.venv/bin/agent-floor</string>
 		<string>probe</string>
 		<string>--out</string>
-		<string>/Users/yashshrivardhankar/.local/state/agent-floor/probes/latest</string>
+		<string>__HOME__/.local/state/agent-floor/probes/latest</string>
 	</array>
 	<!-- srt is a `#!/usr/bin/env node` script and launchd's default PATH has no node:
-	     without this the probe writes nothing and exits 1. Point it at your node. -->
+	     without this the probe writes nothing and exits 1. Point it at your node.
+     Template: replace __HOME__, __REPO_DIR__ and __NODE_BIN_DIR__ before `launchctl bootstrap`. -->
 	<key>EnvironmentVariables</key>
 	<dict>
 		<key>PATH</key>
-		<string>/Users/yashshrivardhankar/.nvm/versions/node/v24.14.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<string>__NODE_BIN_DIR__:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
 	</dict>
 	<key>StandardOutPath</key>
-	<string>/Users/yashshrivardhankar/.local/state/agent-floor/weekly-probe.stdout.log</string>
+	<string>__HOME__/.local/state/agent-floor/weekly-probe.stdout.log</string>
 	<key>StandardErrorPath</key>
-	<string>/Users/yashshrivardhankar/.local/state/agent-floor/weekly-probe.stderr.log</string>
+	<string>__HOME__/.local/state/agent-floor/weekly-probe.stderr.log</string>
 </dict>
 </plist>

@@ -35,6 +35,10 @@ Full P3 output and context: [docs/RESULTS.md](docs/RESULTS.md).
 
 [Anthropic's sandbox-runtime](https://github.com/anthropics/sandbox-runtime) supplies the operating-system sandbox floor. [Fence](https://github.com/fencesandbox/fence) is another sandbox wrapper and a useful comparison point. agent-floor credits both projects and builds on srt rather than replacing its containment layer. This first slice measures the floor; later work is planned for observed-taint decisions, protected instruction files, and a sensitive-data broker. Those later capabilities are not present in this slice.
 
+## Note on test strings
+
+The probe suite plants fake canary strings (for example a fake `-----BEGIN PRIVATE KEY-----` header in `src/agent_floor/probes.py`) to detect leaks. They are not real credentials.
+
 ## Licence
 
 Apache-2.0; see [LICENSE](LICENSE).
