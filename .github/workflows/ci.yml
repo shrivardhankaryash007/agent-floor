@@ -37,5 +37,6 @@ jobs:
       - name: Mypy strict
         run: uv run mypy src
 
+      # The real-srt probe needs macOS Seatbelt; it is covered by the local weekly probe.
       - name: Pytest
-        run: uv run pytest -q
+        run: uv run pytest -q --deselect tests/test_probes.py::test_real_srt_probe_suite
