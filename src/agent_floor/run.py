@@ -15,7 +15,13 @@ from pathlib import Path
 
 from agent_floor.errors import FloorUnavailableError, PolicyError
 from agent_floor.events import Event, EventKind, append
-from agent_floor.policy import compile_srt, load_policy, policy_hash
+from agent_floor.policy import (
+    check_project_dirs,
+    compile_srt,
+    floor_paths,
+    load_policy,
+    policy_hash,
+)
 
 ENV_ALWAYS: tuple[str, ...] = (
     "PATH",
@@ -35,6 +41,9 @@ ENV_NEVER: re.Pattern[str] = re.compile(
     r"(?i)(TOKEN|SECRET|KEY|PASSWORD|PASSWD|CREDENTIAL|AUTH|COOKIE|SESSION)"
 )
 ENV_NEVER_PREFIXES: tuple[str, ...] = ("AWS_",)
+
+# srt keys agent-floor must never emit while node-forge 1.4.0 is pinned (srt 0.0.79 MITM path).
+FORBIDDEN_NETWORK_KEYS: tuple[str, ...] = ("tlsTerminate",)
 
 # Only the Claude seat policy may allow this credential through the env scrub.
 VENDOR_ENV_EXCEPTIONS: tuple[str, ...] = ("CLAUDE_CODE_OAUTH_TOKEN",)
@@ -111,6 +120,16 @@ def run(cmd: Sequence[str], *, policy_path: Path, now: Callable[[], datetime]) -
             "(fail-closed). Fix: cd tools && npm ci --ignore-scripts",
             file=sys.stderr,
         )
+        return 3
+    network = settings.get("network")
+    forbidden = isinstance(network, dict) and any(key in network for key in FORBIDDEN_NETWORK_KEYS)
+    try:
+        if forbidden:
+            raise PolicyError("network.tlsTerminate is refused while node-forge 1.4.0 is pinned")
+        check_project_dirs(policy.project_dirs, floor_paths(policy_path, srt), home=Path.home())
+    except PolicyError as exc:
+        _event("policy_error", run_id, timestamp, reason_code="floor_path_writable")
+        print(f"agent-floor: policy invalid: {exc}; nothing was run", file=sys.stderr)
         return 3
 
     descriptor, settings_name = tempfile.mkstemp(prefix="agent-floor-", suffix=".json")
