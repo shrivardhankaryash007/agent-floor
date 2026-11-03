@@ -513,3 +513,37 @@ Ordered by severity. Each finding gives: where, trigger, what happens vs. what s
 7. **Reads:** is an allow-list for reads under HOME on the roadmap (M2 or later), or is the deny list the long-term
    design? (F18)
 8. **Expiry clock:** should expiry use your local date or UTC? (F20)
+
+## 7. Dependency advisories (2026-11-03)
+
+- **Method:** one OSV `querybatch` call (api.osv.dev) for all 27 locked packages (22 PyPI from `uv.lock`, 5 npm
+  from `tools/package-lock.json`), then `/v1/vulns/<id>` per hit for severity and fixed versions. No other browsing.
+- **PyPI (22 packages, incl. pydantic 2.14.1, mypy 2.4.0, ruff 0.17.0, pytest 9.1.1):** no advisories.
+- **npm:** hits only in transitive deps of `@anthropic-ai/sandbox-runtime` 0.0.79. srt itself, `commander` and
+  `@pondwader/socks5-server` have none.
+- **Reachability** was checked in the installed srt 0.0.79 source:
+  - node-forge is imported only by `mitm-ca.js` / `mitm-leaf.js`, which `sandbox-manager.js` (~line 478-485)
+    calls only when `network.tlsTerminate` is set. `compile_srt` never emits `tlsTerminate`, so these code paths
+    are loaded but never called by agent-floor.
+  - zod validates the settings file agent-floor itself writes (trusted, small input).
+
+| package | version | advisory ID | severity | affected path in this repo? | confidence |
+| --- | --- | --- | --- | --- | --- |
+| node-forge | 1.4.0 | GHSA-5x38-2vff-x55p (basicConstraints bypass in `verifyCertificateChain`) | high | No: chain verification not called; MITM path off (no `tlsTerminate`) | 85 |
+| node-forge | 1.4.0 | GHSA-86w9-cpqp-85rv (RSA PKCS#1 v1.5 sig verify leniency; no fixed version listed) | high | No: no signature verification on agent-floor's path | 80 |
+| node-forge | 1.4.0 | GHSA-jc66-7q78-782g (PKCS#12 MAC forgery, zero iterations) | high | No: no PKCS#12 use | 85 |
+| node-forge | 1.4.0 | GHSA-7wch-p9px-956x (ReDoS in `pem.decode`) | high | No: only on MITM path (off) | 80 |
+| node-forge | 1.4.0 | GHSA-8hrf-8g6f-7xwp, GHSA-hqq3-7jhf-c5jx (TLS record DoS) | high | No: forge TLS engine not used (Node `tls` terminates) | 75 |
+| node-forge | 1.4.0 | GHSA-5cwg-6vw7-rj6p (AES-GCM tagLength auth bypass) | moderate | No | 80 |
+| node-forge | 1.4.0 | GHSA-525v-9gp9-w22h (TLS client crash, no server cert) | moderate | No | 80 |
+| node-forge | 1.4.0 | GHSA-6wvx-3r32-xmcg (prototype pollution in `forge.http` cookies) | moderate | No: `forge.http` not used | 80 |
+| node-forge | 1.4.0 | GHSA-4487-j8r4-4g2f, GHSA-4642-5mcj-2rqw, GHSA-h6cr-wjv9-3cpp | low | No | 80 |
+| zod | 3.25.76 | GHSA-mrhx-c7xc-m3w5 (memory exhaustion on oversized constrained collections; OSV lists fix 4.6.6) | high | Unlikely: input is the settings file agent-floor writes; reachable only if settings can be attacker-sized (see F24) | 70 |
+
+**Takeaways:**
+- **No advisory is reachable** under agent-floor's current settings. This becomes live if a policy ever enables srt
+  `tlsTerminate` (MITM).
+- **Fix direction:** bump node-forge to ≥ 1.4.1 through an srt upgrade or an npm `overrides` entry in
+  `tools/package.json`. AGENTS.md rule 7 requires a probe run for that.
+- **THREAT-MODEL N5** ("audit findings remain to be rechecked") should record these 12 node-forge and 1 zod
+  advisories.
