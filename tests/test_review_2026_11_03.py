@@ -152,6 +152,18 @@ def test_run_still_runs_with_disjoint_project_dir(
     assert len(fake.records()) == 1
 
 
+def test_compile_denies_writes_to_floor_paths(
+    policy_file: Callable[..., Path], fake_home: Path, tmp_path: Path
+) -> None:
+    path = policy_file(rule("no-keys", "black", "write", "~/keys"))
+    floor = floor_paths(path)
+    fs = compile_srt(load_policy(path, today=TODAY), home=fake_home, floor=floor)["filesystem"]
+    assert isinstance(fs, dict)
+    assert str(INSTALL_ROOT) in fs["denyWrite"]
+    assert str((tmp_path / "config").resolve()) in fs["denyWrite"]
+    assert fs["denyWrite"][-1] == str(fake_home / "keys")
+
+
 def test_init_refuses_project_dir_holding_install_root(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

@@ -12,7 +12,7 @@ import pytest
 from agent_floor.cli import main
 from agent_floor.errors import FloorUnavailableError
 from agent_floor.events import read_events
-from agent_floor.policy import compile_srt, load_policy, policy_hash
+from agent_floor.policy import compile_srt, floor_paths, load_policy, policy_hash
 from agent_floor.run import (
     ENV_ALWAYS,
     ENV_NEVER,
@@ -182,8 +182,11 @@ def test_run_invokes_srt_with_settings_and_returns_child_code(
     assert argv[1] == "--settings"
     assert argv[3] == "--"
     assert argv[4:] == ["claude", "-p", "say ok"]
-    expected = compile_srt(load_policy(path, today=TODAY), home=fake_home)
+    floor = floor_paths(path, fake.path)
+    expected = compile_srt(load_policy(path, today=TODAY), home=fake_home, floor=floor)
     assert rec["settings"] == json.loads(json.dumps(expected))
+    # F2 (review 2026-11-03): the floor's own code, srt and policy dir are never writable.
+    assert all(str(p) in rec["settings"]["filesystem"]["denyWrite"] for p in floor)
     assert rec["settings_mode"] == 0o600
     assert not Path(argv[2]).exists()
 

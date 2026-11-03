@@ -105,7 +105,6 @@ def run(cmd: Sequence[str], *, policy_path: Path, now: Callable[[], datetime]) -
     timestamp = now
     try:
         policy = load_policy(policy_path, today=now().date())
-        settings = compile_srt(policy, home=Path.home())
         digest = policy_hash(policy)
     except PolicyError as exc:
         _event("policy_error", run_id, timestamp, reason_code="policy_invalid")
@@ -121,15 +120,22 @@ def run(cmd: Sequence[str], *, policy_path: Path, now: Callable[[], datetime]) -
             file=sys.stderr,
         )
         return 3
-    network = settings.get("network")
-    forbidden = isinstance(network, dict) and any(key in network for key in FORBIDDEN_NETWORK_KEYS)
+    floor = floor_paths(policy_path, srt)
     try:
-        if forbidden:
-            raise PolicyError("network.tlsTerminate is refused while node-forge 1.4.0 is pinned")
-        check_project_dirs(policy.project_dirs, floor_paths(policy_path, srt), home=Path.home())
+        check_project_dirs(policy.project_dirs, floor, home=Path.home())
     except PolicyError as exc:
         _event("policy_error", run_id, timestamp, reason_code="floor_path_writable")
         print(f"agent-floor: policy invalid: {exc}; nothing was run", file=sys.stderr)
+        return 3
+    settings = compile_srt(policy, home=Path.home(), floor=floor)
+    network = settings.get("network")
+    if isinstance(network, dict) and any(key in network for key in FORBIDDEN_NETWORK_KEYS):
+        _event("policy_error", run_id, timestamp, reason_code="tls_terminate_refused")
+        print(
+            "agent-floor: network.tlsTerminate is refused while node-forge 1.4.0 is pinned; "
+            "nothing was run",
+            file=sys.stderr,
+        )
         return 3
 
     descriptor, settings_name = tempfile.mkstemp(prefix="agent-floor-", suffix=".json")

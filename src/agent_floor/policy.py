@@ -194,8 +194,11 @@ def _expand(pattern: str, home: Path) -> str:
     return pattern
 
 
-def compile_srt(policy: Policy, *, home: Path) -> dict[str, object]:
-    """Compile a policy plus built-in protections into an srt settings dict."""
+def compile_srt(policy: Policy, *, home: Path, floor: Sequence[Path] = ()) -> dict[str, object]:
+    """Compile a policy plus built-in protections into an srt settings dict.
+
+    `floor` lists the floor's own paths (see `floor_paths`); they are always denied for writes (F2).
+    """
     deny_read = [
         *(_expand(item, home) for item in SECRET_READ),
         *(
@@ -217,6 +220,7 @@ def compile_srt(policy: Policy, *, home: Path) -> dict[str, object]:
     ]
     deny_write = [
         *(_expand(item, home) for item in (*PROTECTED_WRITE, *SYNC_DIRS)),
+        *(str(path) for path in floor),
         *(
             _expand(rule.pattern, home)
             for rule in policy.rules
