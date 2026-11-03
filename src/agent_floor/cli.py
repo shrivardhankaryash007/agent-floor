@@ -11,7 +11,13 @@ from pathlib import Path
 
 from agent_floor.errors import FloorUnavailableError, PolicyError
 from agent_floor.init import detect_clis, ensure_srt, run_init
-from agent_floor.policy import default_policy_path, load_policy, policy_hash
+from agent_floor.policy import (
+    check_project_dirs,
+    default_policy_path,
+    floor_paths,
+    load_policy,
+    policy_hash,
+)
 from agent_floor.probes import run_probes
 from agent_floor.run import find_srt, run
 
@@ -104,6 +110,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             project_dirs = [Path.cwd().parent.resolve()]
         if any(not path.is_dir() for path in project_dirs):
             print("error: every project directory must already exist", file=sys.stderr)
+            return 2
+        try:
+            check_project_dirs(project_dirs, floor_paths(default_policy_path()), home=Path.home())
+        except PolicyError as exc:
+            print(f"error: {exc}; pass --project-dir that does not hold them", file=sys.stderr)
             return 2
         clis = args.cli if args.cli else detect_clis()
         if not clis:

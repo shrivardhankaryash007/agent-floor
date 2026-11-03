@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import tomllib
+from collections.abc import Sequence
 from datetime import date
 from fnmatch import fnmatch
 from pathlib import Path
@@ -16,6 +17,9 @@ from agent_floor.errors import PolicyError
 Tier = Literal["green", "amber", "red", "black"]
 Kind = Literal["read", "write", "net"]
 WriteClass = Literal["protected", "instruction", "sync", "normal"]
+
+# The checkout (or install prefix) whose code and pinned srt run every floored command (F2).
+INSTALL_ROOT: Path = Path(__file__).resolve().parents[2]
 
 # Always denied for writes, whatever the policy says; srt lets denyWrite win over allowWrite.
 PROTECTED_WRITE: tuple[str, ...] = (
@@ -129,14 +133,13 @@ def load_policy(path: Path, *, today: date) -> Policy:
         raise PolicyError(f"{path}: {detail}") from exc
 
     all_ids = {rule.id for rule in policy.rules}
-    superseded: set[str] = set()
     for rule in policy.rules:
-        if rule.supersedes is not None:
-            if rule.supersedes not in all_ids:
-                raise PolicyError(f"{path}: unknown supersedes id: {rule.supersedes}")
-            superseded.add(rule.supersedes)
+        if rule.supersedes is not None and rule.supersedes not in all_ids:
+            raise PolicyError(f"{path}: unknown supersedes id: {rule.supersedes}")
 
     live = [rule for rule in policy.rules if (rule.expires is None or rule.expires >= today)]
+    # F4: only a live rule may supersede; once an exception expires, the rule it replaced returns.
+    superseded = {rule.supersedes for rule in live if rule.supersedes is not None}
     live = [rule for rule in live if rule.id not in superseded]
     seen: dict[tuple[str, str], Rule] = {}
     for rule in live:
@@ -148,6 +151,40 @@ def load_policy(path: Path, *, today: date) -> Policy:
     return policy.model_copy(update={"rules": live})
 
 
+def _package_root(target: Path) -> Path | None:
+    """Return the nearest ancestor directory of `target` that holds a package.json."""
+    for parent in target.parents:
+        if (parent / "package.json").is_file():
+            return parent
+    return None
+
+
+def floor_paths(policy_path: Path, srt: Path | None = None) -> tuple[Path, ...]:
+    """Return the resolved paths a floored command must never be able to write (F2)."""
+    paths = [INSTALL_ROOT, policy_path.resolve().parent]
+    if srt is not None:
+        real = srt.resolve()
+        paths.append(real)
+        package = _package_root(real)
+        if package is not None:
+            paths.append(package)
+    return tuple(dict.fromkeys(paths))
+
+
+def check_project_dirs(
+    project_dirs: Sequence[Path], protected: Sequence[Path], *, home: Path
+) -> None:
+    """Raise PolicyError if a project dir is, or contains, a floor path (F2)."""
+    for project in project_dirs:
+        resolved = Path(_expand(str(project), home)).resolve()
+        for target in protected:
+            if target == resolved or resolved in target.parents:
+                raise PolicyError(
+                    f"project dir {resolved} contains floor path {target}; "
+                    "a floored agent could rewrite the floor"
+                )
+
+
 def _expand(pattern: str, home: Path) -> str:
     """Expand only a leading home marker; keep glob syntax literal."""
     if pattern == "~":
@@ -157,8 +194,11 @@ def _expand(pattern: str, home: Path) -> str:
     return pattern
 
 
-def compile_srt(policy: Policy, *, home: Path) -> dict[str, object]:
-    """Compile a policy plus built-in protections into an srt settings dict."""
+def compile_srt(policy: Policy, *, home: Path, floor: Sequence[Path] = ()) -> dict[str, object]:
+    """Compile a policy plus built-in protections into an srt settings dict.
+
+    `floor` lists the floor's own paths (see `floor_paths`); they are always denied for writes (F2).
+    """
     deny_read = [
         *(_expand(item, home) for item in SECRET_READ),
         *(
@@ -180,6 +220,7 @@ def compile_srt(policy: Policy, *, home: Path) -> dict[str, object]:
     ]
     deny_write = [
         *(_expand(item, home) for item in (*PROTECTED_WRITE, *SYNC_DIRS)),
+        *(str(path) for path in floor),
         *(
             _expand(rule.pattern, home)
             for rule in policy.rules
@@ -216,6 +257,8 @@ def compile_srt(policy: Policy, *, home: Path) -> dict[str, object]:
         },
         "enableWeakerNetworkIsolation": policy.weaker_network_isolation,
     }
+    # Never emit network.tlsTerminate: srt 0.0.79 runs its MITM CA on node-forge 1.4.0, which has
+    # open advisories (review 2026-11-03, section 7). run() refuses settings that carry it.
     # Emitted only when on, so policies without the flag compile byte-identically to before.
     if policy.allow_pty:
         settings["allowPty"] = True

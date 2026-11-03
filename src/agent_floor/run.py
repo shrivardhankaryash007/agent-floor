@@ -15,7 +15,13 @@ from pathlib import Path
 
 from agent_floor.errors import FloorUnavailableError, PolicyError
 from agent_floor.events import Event, EventKind, append
-from agent_floor.policy import compile_srt, load_policy, policy_hash
+from agent_floor.policy import (
+    check_project_dirs,
+    compile_srt,
+    floor_paths,
+    load_policy,
+    policy_hash,
+)
 
 ENV_ALWAYS: tuple[str, ...] = (
     "PATH",
@@ -35,6 +41,9 @@ ENV_NEVER: re.Pattern[str] = re.compile(
     r"(?i)(TOKEN|SECRET|KEY|PASSWORD|PASSWD|CREDENTIAL|AUTH|COOKIE|SESSION)"
 )
 ENV_NEVER_PREFIXES: tuple[str, ...] = ("AWS_",)
+
+# srt keys agent-floor must never emit while node-forge 1.4.0 is pinned (srt 0.0.79 MITM path).
+FORBIDDEN_NETWORK_KEYS: tuple[str, ...] = ("tlsTerminate",)
 
 # Only the Claude seat policy may allow this credential through the env scrub.
 VENDOR_ENV_EXCEPTIONS: tuple[str, ...] = ("CLAUDE_CODE_OAUTH_TOKEN",)
@@ -96,7 +105,6 @@ def run(cmd: Sequence[str], *, policy_path: Path, now: Callable[[], datetime]) -
     timestamp = now
     try:
         policy = load_policy(policy_path, today=now().date())
-        settings = compile_srt(policy, home=Path.home())
         digest = policy_hash(policy)
     except PolicyError as exc:
         _event("policy_error", run_id, timestamp, reason_code="policy_invalid")
@@ -109,6 +117,23 @@ def run(cmd: Sequence[str], *, policy_path: Path, now: Callable[[], datetime]) -
         print(
             "agent-floor: sandbox floor unavailable; refusing to run unsandboxed "
             "(fail-closed). Fix: cd tools && npm ci --ignore-scripts",
+            file=sys.stderr,
+        )
+        return 3
+    floor = floor_paths(policy_path, srt)
+    try:
+        check_project_dirs(policy.project_dirs, floor, home=Path.home())
+    except PolicyError as exc:
+        _event("policy_error", run_id, timestamp, reason_code="floor_path_writable")
+        print(f"agent-floor: policy invalid: {exc}; nothing was run", file=sys.stderr)
+        return 3
+    settings = compile_srt(policy, home=Path.home(), floor=floor)
+    network = settings.get("network")
+    if isinstance(network, dict) and any(key in network for key in FORBIDDEN_NETWORK_KEYS):
+        _event("policy_error", run_id, timestamp, reason_code="tls_terminate_refused")
+        print(
+            "agent-floor: network.tlsTerminate is refused while node-forge 1.4.0 is pinned; "
+            "nothing was run",
             file=sys.stderr,
         )
         return 3

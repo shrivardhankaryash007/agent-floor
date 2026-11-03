@@ -57,4 +57,4 @@ Statuses below reflect the plan's disposition, not proof that every planned miti
 | N2 | Agent CLI model API host must be allowed | Accepted and documented residual risk; model API traffic is trusted by the plan. |
 | N3 | srt is beta and its API changes | Mitigated by exact version pinning and a probe run for version bumps. |
 | N4 | Cost of live-model testing | Managed by the zero-extra-spend rule; T1 is capped at 50 tasks. |
-| N5 | Supply chain of the layer | Mitigated by lockfile integrity hashes, install scripts disabled, and audit on srt bumps; audit findings remain to be rechecked. |
+| N5 | Supply chain of the layer | Mitigated by lockfile integrity hashes, install scripts disabled, and audit on srt bumps; audit findings remain to be rechecked. OSV on 2026-11-03: node-forge 1.4.0 (12 advisories) and zod 3.25.76 (1), both via srt 0.0.79; none reachable because agent-floor never emits srt `network.tlsTerminate` (the MITM path that uses node-forge), and `run` refuses settings that carry it. Bump when a fixed srt is probe-verified. |
